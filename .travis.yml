@@ -1,0 +1,32 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t privatebutts/multicontainer-client-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true privatebutts/multicontainer-client-test npm run test
+
+after_script:
+  - docker build -t privatebutts/multiclient ./client
+  - docker build -t privatebutts/multinginx ./nginx
+  - docker build -t privatebutts/multiserver ./server
+  - docker build -t privatebutts/multiworker ./worker
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  - docker push privatebutts/multiclient
+  - docker push privatebutts/multinginx
+  - docker push privatebutts/multiserver
+  - docker push privatebutts/multiworker
+
+# deploy:
+#   provider: elasticbeanstalk
+#   region: "us-east-2"
+#   app: "docker-training"
+#   env: "DockerTraining-env"
+#   bucket_name: "elasticbeanstalk-us-east-2-191812622449"
+#   bucket_path: "docker-training"
+#   access_key_id: $AWS_ACCESS_KEY
+#   secret_access_key: $AWS_SECRET_KEY
+#   on:
+#     branch: master
